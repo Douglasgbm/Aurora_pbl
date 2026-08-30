@@ -114,83 +114,56 @@ FASE 3 — VEREDITO E CLASSIFICAÇÃO
 
 Fim: registro do cenário em `cenarios/` (planilha CSV + relatório TXT)
 
-FLUXOGRAMA — VISÃO GERAL
-
-```mermaid
-graph LR
-    A("Coleta de<br/>Telemetria") --> F1["FASE 1<br/>6 verificações<br/>de segurança"]
-    F1 --> F2["FASE 2<br/>Análise assistida<br/>por IA"]
-    F2 --> F3{"FASE 3<br/>Veredito"}
-    F3 --> RO("ÓTIMO<br/>sucesso absoluto")
-    F3 --> RM("MÉDIO<br/>com ressalvas")
-    F3 --> RH("HORRÍVEL<br/>abortada")
-    RO --> REG("Registro<br/>em cenarios/")
-    RM --> REG
-    RH --> REG
-```
-
-FLUXOGRAMA — FASE 1: VERIFICAÇÕES DE SEGURANÇA
+FLUXOGRAMA
 
 ```mermaid
 graph TD
-    A("INÍCIO<br/>Coleta de Telemetria") --> B["decolagem_autorizada = True"]
+    A[Início: Coleta de Telemetria] --> B{Temp Interna OK?}
 
-    B --> V1{"Temp. Interna<br/>entre 15 e 30 C?"}
-    V1 -- Não --> X1["Erro: Temp. Interna<br/>chave = False"]
-    V1 -- Sim --> V2{"Temp. Externa<br/>entre -10 e 45 C?"}
-    X1 --> V2
+    B -- Não --> C[Erro: Temp Interna]
+    B -- Sim --> D{Temp Externa OK?}
 
-    V2 -- Não --> X2["Erro: Temp. Externa<br/>chave = False"]
-    V2 -- Sim --> V3{"Integridade<br/>igual a 1?"}
-    X2 --> V3
+    D -- Não --> F[Erro: Temp Externa]
+    D -- Sim --> G{Integridade OK?}
 
-    V3 -- Não --> X3["Erro: Integridade<br/>chave = False"]
-    V3 -- Sim --> V4{"Pressão entre<br/>450 e 550 psi?"}
-    X3 --> V4
+    G -- Não --> H[Erro: Integridade]
+    G -- Sim --> I{Pressão Tanques OK?}
 
-    V4 -- Não --> X4["Erro: Pressão<br/>chave = False"]
-    V4 -- Sim --> V5{"Energia<br/>maior ou igual a 80%?"}
-    X4 --> V5
+    I -- Não --> J[Erro: Pressão]
+    I -- Sim --> K{Energia OK?}
 
-    V5 -- Não --> X5["Erro: Energia<br/>chave = False"]
-    V5 -- Sim --> V6{"Reserva pós-decolagem<br/>maior ou igual a 10%?"}
+    K -- Não --> L[Erro: Energia]
+    K -- Sim --> M{Módulos Online?}
 
-    V6 -- Não --> X6["Erro: Reserva<br/>chave = False"]
-    V6 -- Sim --> V7{"Módulos críticos<br/>online?"}
-    X5 --> V7
-    X6 --> V7
+    M -- Não --> N[Erro: Módulos]
+    M -- Sim --> IA[ANÁLISE ASSISTIDA POR IA]
 
-    V7 -- Não --> X7["Erro: Módulos<br/>chave = False"]
-    V7 -- Sim --> IA("segue para a FASE 2")
-    X7 --> IA
+    C --> E[decolagem_autorizada = False]
+    F --> E
+    H --> E
+    J --> E
+    L --> E
+    N --> E
+    E --> IA
+
+    IA -- Chave desligada --> P1[HORRÍVEL]
+    IA -- Autorizada com alertas --> P2[MÉDIO]
+    IA -- Autorizada sem alertas --> P3[ÓTIMO]
+
+    P1 --> R1(Decolagem Não Autorizada)
+    P2 --> R2(Autorizada com Ressalvas)
+    P3 --> R3(Autorizada)
 ```
 
-FLUXOGRAMA — FASES 2 E 3: ANÁLISE POR IA E VEREDITO
+Duas observações sobre a leitura do desenho:
 
-```mermaid
-graph TD
-    IA["ANÁLISE ASSISTIDA POR IA<br/>cruza os parâmetros entre si"]
+1. Para não poluir o diagrama, as setas que ligam cada bloco de erro à verificação
+   seguinte foram omitidas. No código, uma falha **não interrompe** as demais
+   verificações: todas as seis são executadas e os erros se acumulam, para que o
+   operador veja todos os problemas de uma vez.
 
-    IA --> G1{"Grupo 1<br/>Dados fisicamente<br/>possíveis?"}
-    G1 -- Não --> CR["Registra CRÍTICOS<br/>chave = False"]
-    G1 -- Sim --> G2{"Grupos 2, 3 e 4<br/>Combinações<br/>de risco?"}
-    CR --> G2
-
-    G2 -- Sim --> AL["Registra ALERTAS<br/>não bloqueia sozinho"]
-    G2 -- Não --> D1{"Chave<br/>autorizada?"}
-    AL --> D1
-
-    D1 -- Não --> RH("HORRÍVEL<br/>DECOLAGEM ABORTADA")
-    D1 -- Sim --> D2{"Existem<br/>alertas?"}
-
-    D2 -- Sim --> RM("MÉDIO<br/>DECOLAGEM COM RESSALVAS")
-    D2 -- Não --> RO("ÓTIMO<br/>SUCESSO ABSOLUTO")
-
-    RH --> REG["Grava em cenarios/<br/>planilha CSV + relatório TXT"]
-    RM --> REG
-    RO --> REG
-    REG --> FIM("FIM")
-```
+2. A camada de IA pode desligar a chave por conta própria, ao encontrar dados
+   fisicamente impossíveis — foi o que ocorreu no cenário 08.
 
 CENÁRIOS POSSÍVEIS
 
