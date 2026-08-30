@@ -1,3 +1,8 @@
+# BIBLIOTECAS USADAS PARA GRAVAR O RESULTADO DE CADA EXECUÇÃO EM DISCO.
+import csv       # ESCREVE PLANILHAS NO FORMATO CSV (ABRE NO EXCEL)
+import os        # LIDA COM PASTAS E CAMINHOS DE ARQUIVO
+from datetime import datetime  # CARIMBA A DATA E HORA DE CADA EXECUÇÃO
+
 temp_interna = float(input("Digite a temperatura interna: "))
 temp_externa = float(input("Digite a temperatura externa: "))
 integridade = int(input("Digite a integridade (1 para OK, 0 para Falha): "))
@@ -173,3 +178,127 @@ if decolagem_autorizada:
     print("Decolagem Autorizada!")
 else:
     print("Decolagem Não Autorizada!")
+
+
+# =====================================================================
+# REGISTRO DO CENÁRIO (coleta de dados para o relatório)
+# =====================================================================
+# CADA EXECUÇÃO DO PROGRAMA GRAVA DOIS ARQUIVOS NA PASTA "cenarios":
+#   1. registro_execucoes.csv -> UMA LINHA POR EXECUÇÃO (TABELA COMPARATIVA)
+#   2. cenario_XX_CLASSE.txt  -> O RELATÓRIO COMPLETO DAQUELA EXECUÇÃO
+
+# DESCOBRE A PASTA DO PROJETO PARA SALVAR SEMPRE NO MESMO LUGAR,
+# INDEPENDENTE DE ONDE O PROGRAMA TENHA SIDO EXECUTADO.
+if "__file__" in globals():
+    pasta_scripts = os.path.dirname(os.path.abspath(__file__))
+    pasta_cenarios = os.path.normpath(os.path.join(pasta_scripts, "..", "cenarios"))
+else:  # NO JUPYTER NOTEBOOK A VARIÁVEL __file__ NÃO EXISTE
+    pasta_cenarios = "cenarios"
+
+os.makedirs(pasta_cenarios, exist_ok=True)  # CRIA A PASTA SE ELA AINDA NÃO EXISTIR
+arquivo_csv = os.path.join(pasta_cenarios, "registro_execucoes.csv")
+
+# CLASSIFICAÇÃO AUTOMÁTICA DO CENÁRIO (ÓTIMO / MÉDIO / HORRÍVEL)
+if not decolagem_autorizada:
+    classificacao = "HORRIVEL"
+elif alertas:
+    classificacao = "MEDIO"
+else:
+    classificacao = "OTIMO"
+
+# DESCOBRE O NÚMERO DESTA EXECUÇÃO CONTANDO AS LINHAS JÁ GRAVADAS.
+# O CABEÇALHO OCUPA A LINHA 1, ENTÃO O TOTAL DE LINHAS JÁ É O PRÓXIMO NÚMERO.
+numero_execucao = 1
+if os.path.exists(arquivo_csv):
+    arquivo = open(arquivo_csv, "r", encoding="utf-8-sig")
+    numero_execucao = len(arquivo.readlines())
+    arquivo.close()
+
+# CONVERTE OS BOOLEANOS PARA TEXTO LEGÍVEL NA PLANILHA
+if modulos_online:
+    modulos_texto = "SIM"
+else:
+    modulos_texto = "NAO"
+
+if decolagem_autorizada:
+    decolagem_texto = "AUTORIZADA"
+else:
+    decolagem_texto = "ABORTADA"
+
+# --- ARQUIVO 1: A PLANILHA ACUMULATIVA ---
+cabecalho = ["execucao", "data_hora", "classificacao", "temp_interna", "temp_externa",
+             "integridade", "pressao_psi", "energia_pct", "modulos_online",
+             "capacidade_kwh", "disponivel_kwh", "consumo_real_kwh", "restante_kwh",
+             "autonomia_pct", "qtd_criticos", "qtd_alertas", "decolagem"]
+
+linha = [numero_execucao,
+         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+         classificacao,
+         temp_interna, temp_externa, integridade, pressao_tanques, energia,
+         modulos_texto, capacidade_total,
+         round(energia_disponivel, 1), round(consumo_real, 1),
+         round(energia_restante, 1), round(autonomia_restante, 1),
+         len(criticos), len(alertas), decolagem_texto]
+
+csv_ja_existe = os.path.exists(arquivo_csv)
+# newline="" EVITA LINHAS EM BRANCO NO WINDOWS; utf-8-sig FAZ O EXCEL LER OS ACENTOS
+arquivo = open(arquivo_csv, "a", newline="", encoding="utf-8-sig")
+escritor = csv.writer(arquivo, delimiter=";")  # ";" É O SEPARADOR DO EXCEL EM PORTUGUÊS
+if not csv_ja_existe:
+    escritor.writerow(cabecalho)
+escritor.writerow(linha)
+arquivo.close()
+
+# --- ARQUIVO 2: O RELATÓRIO DETALHADO DESTA EXECUÇÃO ---
+nome_txt = "cenario_{:02d}_{}.txt".format(numero_execucao, classificacao)
+arquivo_txt = os.path.join(pasta_cenarios, nome_txt)
+
+relatorio = []
+relatorio.append("=" * 62)
+relatorio.append("PROJETO AURORA - REGISTRO DE EXECUCAO Nº {:02d}".format(numero_execucao))
+relatorio.append("Data/hora    : " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+relatorio.append("Classificacao: " + classificacao)
+relatorio.append("=" * 62)
+relatorio.append("")
+relatorio.append("DADOS DE TELEMETRIA INFORMADOS")
+relatorio.append("  Temperatura interna : {:.1f} C".format(temp_interna))
+relatorio.append("  Temperatura externa : {:.1f} C".format(temp_externa))
+relatorio.append("  Integridade         : {}".format(integridade))
+relatorio.append("  Pressao dos tanques : {:.1f} psi".format(pressao_tanques))
+relatorio.append("  Energia             : {:.1f} %".format(energia))
+relatorio.append("  Modulos online      : " + modulos_texto)
+relatorio.append("  Capacidade bateria  : {:.1f} kWh".format(capacidade_total))
+relatorio.append("")
+relatorio.append("ANALISE ENERGETICA")
+relatorio.append("  Disponivel na bateria : {:.1f} kWh".format(energia_disponivel))
+relatorio.append("  Consumo + perdas      : {:.1f} kWh".format(consumo_real))
+relatorio.append("  Sobra apos decolagem  : {:.1f} kWh ({:.1f}%)".format(energia_restante, autonomia_restante))
+relatorio.append("")
+relatorio.append("ANALISE ASSISTIDA POR IA")
+
+if criticos:
+    relatorio.append("  Discrepancias criticas:")
+    for item in criticos:
+        relatorio.append("    [X] " + item)
+
+if alertas:
+    relatorio.append("  Alertas:")
+    for item in alertas:
+        relatorio.append("    [!] " + item)
+
+if not criticos and not alertas:
+    relatorio.append("  Nenhuma discrepancia encontrada.")
+
+relatorio.append("")
+relatorio.append("VEREDITO FINAL: DECOLAGEM " + decolagem_texto)
+relatorio.append("=" * 62)
+
+arquivo = open(arquivo_txt, "w", encoding="utf-8")
+arquivo.write("\n".join(relatorio))  # JUNTA A LISTA EM UM TEXTO, UMA LINHA POR ITEM
+arquivo.close()
+
+print("")
+print("Cenario registrado como {} (classificacao: {})".format(nome_txt, classificacao))
+print("Planilha acumulada em: cenarios/registro_execucoes.csv")
+
+

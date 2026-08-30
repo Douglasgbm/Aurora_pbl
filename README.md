@@ -31,3 +31,23 @@ Faltam ainda, conforme os entregáveis do roadmap:
 - Prints da execução
 - Instruções de execução detalhadas
 - Notebook Python (.ipynb)
+
+
+
+CENARIOS - OTIMO - MEDIO - HORRIVEL - 10x
+
+| Temp. Interna | 20 a 25 °C | 15–20 ou 25–30 °C | < 15 ou > 30 °C |
+| Temp. Externa | 0 a 35 °C | −10–0 ou 35–45 °C | < −10 ou > 45 °C |
+| Pressão | 480 a 520 psi | 450–480 ou 520–550 psi | < 450 ou > 550 psi |
+| Energia | ≥ 90 % | 80 a 90 % | < 80 % |
+
+10 50 350 70 - PESSIMO
+25 30 550 80 - MEDIO
+25 30 480 100 - OTIMO 
+
+DOCUMENTAR O PROJETO - FLUXOGRAMA 
+
+
+FLUXO
+
+

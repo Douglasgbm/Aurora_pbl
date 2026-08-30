@@ -82,76 +82,132 @@ Por que esses valores?
 - Energia: Garante que não falte carga no pico da decolagem.
 - Pressão: Define um range de ± 10\% do nominal, que é comum em sistemas hidráulicos/pneumáticos.
 
-FLUXOGRAMA
+ALGORITMO EM PSEUDOCÓDIGO
+
+Uma observação importante sobre o desenho: as verificações **não abortam em
+cascata**. Todas as seis são executadas sempre, e cada uma pode desligar a chave
+`decolagem_autorizada`. Isso é proposital — em telemetria, o operador precisa ver
+todos os problemas de uma vez, e não descobrir o próximo defeito só na tentativa
+seguinte.
 
 Início: Verificação de Decolagem
-1. Bloco de Decisão 1: Integridade Estrutural
-   - É igual a 1? 
-     - Não → [ABORTAR] → Motivo: Falha Estrutural.
-     - Sim → Próximo passo.
 
-2. Bloco de Decisão 2: Módulos Críticos
-   - Todos estão Online?
-     - Não → [ABORTAR] → Motivo: Falha de Sistema Crítico.
-     - Sim → Próximo passo.
+FASE 1 — VERIFICAÇÕES DE SEGURANÇA (todas executam, acumulando erros)
+1. Temperatura Interna entre 15°C e 30°C?      Não → registra erro, chave = False
+2. Temperatura Externa entre -10°C e 45°C?     Não → registra erro, chave = False
+3. Integridade Estrutural igual a 1?           Não → registra erro, chave = False
+4. Pressão dos Tanques entre 450 e 550 psi?    Não → registra erro, chave = False
+5. Energia ≥ 80\%?                              Não → registra erro, chave = False
+   5a. Se passou: reserva pós-decolagem ≥ 10\%? Não → registra erro, chave = False
+6. Módulos Críticos todos online?              Não → registra erro, chave = False
 
-3. Bloco de Decisão 3: Energia
-   - Nível ≥ 80\%?
-     - Não → [ABORTAR] → Motivo: Energia Insuficiente.
-     - Sim → Próximo passo.
+FASE 2 — ANÁLISE ASSISTIDA POR IA (cruzamento entre os parâmetros)
+7. Grupo 1 — Os dados são fisicamente possíveis?
+   - Não → registra DISCREPÂNCIA CRÍTICA e desliga a chave.
+8. Grupos 2, 3 e 4 — Existem combinações de risco entre parâmetros válidos?
+   - Sim → registra ALERTA (não bloqueia por si só).
 
-4. Bloco de Decisão 4: Pressão dos Tanques
-   - Está entre 450 psi e 550 psi?
-     - Não → [ABORTAR] → Motivo: Pressão Fora do Range.
-     - Sim → Próximo passo.
+FASE 3 — VEREDITO E CLASSIFICAÇÃO
+9. Chave desligada?          → HORRÍVEL  → DECOLAGEM ABORTADA
+10. Chave ligada com alertas → MÉDIO     → DECOLAGEM COM RESSALVAS
+11. Chave ligada sem alertas → ÓTIMO     → SUCESSO ABSOLUTO
 
-5. Bloco de Decisão 5: Temperaturas (Interna e Externa)
-   - Interna (15°C a 30°C) E Externa (-10°C a 45°C)?
-     - Não → [ABORTAR] → Motivo: Temperatura Instável.
-     - Sim → Próximo passo.
+Fim: registro do cenário em `cenarios/` (planilha CSV + relatório TXT)
 
-     Fim: [PRONTO PARA DECOLAR]
+FLUXOGRAMA — VISÃO GERAL
 
-FLUXOGRAMA
+```mermaid
+graph LR
+    A("Coleta de<br/>Telemetria") --> F1["FASE 1<br/>6 verificações<br/>de segurança"]
+    F1 --> F2["FASE 2<br/>Análise assistida<br/>por IA"]
+    F2 --> F3{"FASE 3<br/>Veredito"}
+    F3 --> RO("ÓTIMO<br/>sucesso absoluto")
+    F3 --> RM("MÉDIO<br/>com ressalvas")
+    F3 --> RH("HORRÍVEL<br/>abortada")
+    RO --> REG("Registro<br/>em cenarios/")
+    RM --> REG
+    RH --> REG
+```
+
+FLUXOGRAMA — FASE 1: VERIFICAÇÕES DE SEGURANÇA
 
 ```mermaid
 graph TD
-    A[Início: Coleta de Telemetria] --> B{Temp Interna OK?}
-    B -- Não --> C[Erro: Temp Interna]
-    B -- Sim --> D{Temp Externa OK?}
-    
-    C --> E[decolagem_autorizada = False]
-    
-    D -- Não --> F[Erro: Temp Externa]
-    D -- Sim --> G{Integridade OK?}
-    
-    F --> E
-    
-    G -- Não --> H[Erro: Integridade]
-    G -- Sim --> I{Pressão Tanques OK?}
-    
-    H --> E
-    
-    I -- Não --> J[Erro: Pressão]
-    I -- Sim --> K{Energia OK?}
-    
-    J --> E
-    
-    K -- Não --> L[Erro: Energia]
-    K -- Sim --> M{Módulos Online?}
-    
-    L --> E
-    
-    M -- Não --> N[Erro: Módulos]
-    M -- Sim --> O[Veredito Final]
-    
-    N --> E
-    E --> O
-    
-    O --> P{Autorizada?}
-    P -- Sim --> Q[DECOLAGEM!]
-    P -- Não --> R[ABORTAR!]
+    A("INÍCIO<br/>Coleta de Telemetria") --> B["decolagem_autorizada = True"]
+
+    B --> V1{"Temp. Interna<br/>entre 15 e 30 C?"}
+    V1 -- Não --> X1["Erro: Temp. Interna<br/>chave = False"]
+    V1 -- Sim --> V2{"Temp. Externa<br/>entre -10 e 45 C?"}
+    X1 --> V2
+
+    V2 -- Não --> X2["Erro: Temp. Externa<br/>chave = False"]
+    V2 -- Sim --> V3{"Integridade<br/>igual a 1?"}
+    X2 --> V3
+
+    V3 -- Não --> X3["Erro: Integridade<br/>chave = False"]
+    V3 -- Sim --> V4{"Pressão entre<br/>450 e 550 psi?"}
+    X3 --> V4
+
+    V4 -- Não --> X4["Erro: Pressão<br/>chave = False"]
+    V4 -- Sim --> V5{"Energia<br/>maior ou igual a 80%?"}
+    X4 --> V5
+
+    V5 -- Não --> X5["Erro: Energia<br/>chave = False"]
+    V5 -- Sim --> V6{"Reserva pós-decolagem<br/>maior ou igual a 10%?"}
+
+    V6 -- Não --> X6["Erro: Reserva<br/>chave = False"]
+    V6 -- Sim --> V7{"Módulos críticos<br/>online?"}
+    X5 --> V7
+    X6 --> V7
+
+    V7 -- Não --> X7["Erro: Módulos<br/>chave = False"]
+    V7 -- Sim --> IA("segue para a FASE 2")
+    X7 --> IA
 ```
+
+FLUXOGRAMA — FASES 2 E 3: ANÁLISE POR IA E VEREDITO
+
+```mermaid
+graph TD
+    IA["ANÁLISE ASSISTIDA POR IA<br/>cruza os parâmetros entre si"]
+
+    IA --> G1{"Grupo 1<br/>Dados fisicamente<br/>possíveis?"}
+    G1 -- Não --> CR["Registra CRÍTICOS<br/>chave = False"]
+    G1 -- Sim --> G2{"Grupos 2, 3 e 4<br/>Combinações<br/>de risco?"}
+    CR --> G2
+
+    G2 -- Sim --> AL["Registra ALERTAS<br/>não bloqueia sozinho"]
+    G2 -- Não --> D1{"Chave<br/>autorizada?"}
+    AL --> D1
+
+    D1 -- Não --> RH("HORRÍVEL<br/>DECOLAGEM ABORTADA")
+    D1 -- Sim --> D2{"Existem<br/>alertas?"}
+
+    D2 -- Sim --> RM("MÉDIO<br/>DECOLAGEM COM RESSALVAS")
+    D2 -- Não --> RO("ÓTIMO<br/>SUCESSO ABSOLUTO")
+
+    RH --> REG["Grava em cenarios/<br/>planilha CSV + relatório TXT"]
+    RM --> REG
+    RO --> REG
+    REG --> FIM("FIM")
+```
+
+CENÁRIOS POSSÍVEIS
+
+O ponto central do novo fluxo é que **autorizar não é o mesmo que estar tudo
+bem**. A camada de IA separa o "decolou porque nada impediu" do "decolou sem
+nenhuma ressalva", que o veredito binário anterior não distinguia.
+
+| Classificação | Chave | Alertas | Significado | Exemplo real coletado |
+| :--- | :--- | :--- | :--- | :--- |
+| **ÓTIMO** | Autorizada | Nenhum | Sucesso absoluto: nenhuma discrepância no cruzamento dos dados | Cenário 09 — noite fresca, bateria a 98% |
+| **MÉDIO** | Autorizada | 1 ou mais | Decolagem viável, mas consumindo margem de segurança. Recomenda revisão humana | Cenário 06 — cabine a 29°C, externa a -8°C, tanque a 535 psi (3 alertas) |
+| **HORRÍVEL** | Abortada | — | Falha em verificação de segurança **ou** telemetria não confiável | Cenário 08 — energia lida como 105% e integridade como 3 |
+
+O caso mais instrutivo é o **cenário 08**: as seis verificações clássicas
+aprovaram todos os parâmetros (105 não é menor que 80; 3 não é menor que 1), e
+foi a Fase 2 que barrou a decolagem ao perceber que os valores eram fisicamente
+impossíveis. É exatamente a lacuna que motivou incluir a IA no fluxo.
 
 Como funciona
 <pre> ```mermaid graph TD A[Início] --> B{Energia ≥ 80%?} B -- Não --> C[ABORTAR] B -- Sim --> D[DECOLAR] ``` </pre>
@@ -170,3 +226,4 @@ Onde isso aparece renderizado
 GitHub — renderiza nativo. Como o entregável é repositório público, o fluxograma vai aparecer desenhado direto no .md. ✅
 Obsidian — renderiza nativo.
 VS Code — o preview embutido não renderiza; precisa da extensão Markdown Preview Mermaid Support. É bem provável que seja por isso que você achou que não estava funcionando.
+
