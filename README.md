@@ -74,29 +74,68 @@ observe estes três pontos" devolve a decisão a quem tem responsabilidade sobre
 
 ## Instruções de execução
 
-**Requisito:** Python 3.6 ou superior. Nenhuma biblioteca externa é necessária — o
-programa usa apenas a biblioteca padrão.
+### Pré-requisitos
 
-### 1. Clonar o repositório
+**Python 3.6 ou superior** é o único requisito obrigatório.
+
+**Não é necessário instalar nenhuma dependência.** O programa usa apenas a
+biblioteca padrão do Python (`csv`, `os`, `datetime`, `subprocess`). Não há
+`requirements.txt` porque não há o que instalar.
+
+Para verificar se o Python já está instalado, abra o terminal e digite:
+
+```bash
+python --version
+```
+
+Se aparecer algo como `Python 3.12.10`, está tudo certo. Se o comando não for
+reconhecido, baixe o Python em [python.org/downloads](https://www.python.org/downloads/).
+
+> **Windows:** durante a instalação, marque a opção **"Add Python to PATH"** na
+> primeira tela. Sem isso, o comando `python` não funciona no terminal.
+>
+> Em algumas instalações o comando é `python3` em vez de `python`. Se um não
+> funcionar, tente o outro.
+
+### 1. Obter o projeto
+
+Com Git instalado:
 
 ```bash
 git clone https://github.com/Douglasgbm/Aurora_pbl.git
 cd Aurora_pbl
 ```
 
-### 2. Executar o programa interativo
+Sem Git: baixe o ZIP pelo botão verde **Code > Download ZIP** na página do
+repositório, extraia a pasta e abra o terminal dentro dela.
+
+### 2. Executar o programa
 
 ```bash
-python scripts/usuario.py
+python scripts/main.py
 ```
 
-O programa solicita os seis parâmetros pelo teclado. Responda com números; para os
-módulos críticos, digite `S` ou `N`.
+O programa solicita os seis parâmetros pelo teclado, um de cada vez:
+
+| Pergunta | O que digitar | Exemplo |
+| :--- | :--- | :--- |
+| Temperatura interna | número em °C | `23` |
+| Temperatura externa | número em °C | `20` |
+| Integridade | `1` para OK, `0` para falha | `1` |
+| Pressão dos tanques | número em psi | `495` |
+| Porcentagem de energia | número de 0 a 100 | `92` |
+| Módulos online | `S` para sim, `N` para não | `S` |
+
+Use **ponto** para decimais (`22.5`), não vírgula — é a notação que o Python
+entende.
 
 Cada execução grava automaticamente dois arquivos na pasta `cenarios/`:
 
 - `registro_execucoes.csv` — uma linha por execução, acumulativo (abre no Excel)
 - `cenario_XX_CLASSE.txt` — o relatório completo daquela execução
+
+A pasta é criada sozinha na primeira execução, e a numeração continua de onde
+parou.
 
 ### 3. Gerar os cenários de teste (opcional)
 
@@ -104,18 +143,46 @@ Cada execução grava automaticamente dois arquivos na pasta `cenarios/`:
 python scripts/cenarios.py
 ```
 
-Executa os cenários pré-definidos que ainda faltam para completar a meta de 10.
-Rodar duas vezes não duplica nada — o script conta o que já existe.
+Executa os cenários pré-definidos que ainda faltam para completar a meta de 10,
+sem precisar digitar nada. Rodar duas vezes não duplica registros — o script conta
+o que já existe e para quando a meta é atingida.
+
+Para gerar tudo de novo do zero, apague os arquivos da pasta `cenarios/` antes.
 
 ### 4. Abrir o notebook
 
+O notebook reúne os itens 1.1 a 1.6 e executa de ponta a ponta. Diferente dos
+scripts, ele **exige a instalação do Jupyter**:
+
 ```bash
+pip install jupyter
 jupyter notebook notebook/aurora_pbl.ipynb
 ```
 
-O notebook reúne os itens 1.1 a 1.6 e executa de ponta a ponta. O gráfico de
-cenários requer `matplotlib`; sem a biblioteca, os mesmos dados são exibidos em
-formato de tabela.
+Depois de abrir no navegador, use o menu **Run > Run All Cells** para executar
+tudo em ordem.
+
+Alternativa sem instalar nada: o GitHub renderiza o notebook automaticamente ao
+clicar no arquivo, e o VS Code o abre com a extensão *Jupyter*.
+
+**Gráfico opcional.** A célula final gera um gráfico de barras se a biblioteca
+`matplotlib` estiver instalada:
+
+```bash
+pip install matplotlib
+```
+
+Sem ela, nada quebra — os mesmos dados aparecem em formato de tabela nas células
+anteriores.
+
+### Problemas comuns
+
+| Sintoma | Causa provável | Solução |
+| :--- | :--- | :--- |
+| `python: command not found` | Python não instalado ou fora do PATH | Reinstale marcando "Add Python to PATH", ou tente `python3` |
+| `ValueError: could not convert string to float` | Foi digitado texto ou vírgula onde se espera número | Use apenas números, com ponto decimal (`22.5`) |
+| Acentos aparecem como `?` ou `Ã§` no terminal | Codificação do console do Windows | Rode `chcp 65001` antes, ou use o Windows Terminal |
+| `can't open file 'scripts/main.py'` | Terminal está na pasta errada | Entre na pasta raiz do projeto antes de executar |
 
 ---
 
@@ -219,9 +286,8 @@ sobre qualquer coisa.
 
 ```
 ├── scripts/
-│   ├── usuario.py            programa interativo completo
-│   ├── cenarios.py           gerador automático de cenários
-│   └── main.py               versão inicial com valores fixos
+│   ├── main.py               programa principal (interativo)
+│   └── cenarios.py           gerador automático de cenários
 ├── cenarios/                 10 cenários coletados (CSV + relatórios TXT)
 ├── notebook/
 │   └── aurora_pbl.ipynb      notebook com os itens 1.1 a 1.6

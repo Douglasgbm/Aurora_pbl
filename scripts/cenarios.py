@@ -2,9 +2,9 @@
 # GERADOR DE CENÁRIOS DE TESTE - PROJETO AURORA
 # =====================================================================
 # ESTE SCRIPT NÃO REFAZ A LÓGICA DE VERIFICAÇÃO. ELE EXECUTA O PRÓPRIO
-# usuario.py E ENTREGA AS RESPOSTAS AUTOMATICAMENTE, COMO SE ALGUÉM
+# main.py E ENTREGA AS RESPOSTAS AUTOMATICAMENTE, COMO SE ALGUÉM
 # ESTIVESSE DIGITANDO. ASSIM EXISTE UMA ÚNICA FONTE DA VERDADE: SE AS
-# REGRAS MUDAREM NO usuario.py, OS CENÁRIOS ACOMPANHAM SOZINHOS.
+# REGRAS MUDAREM NO main.py, OS CENÁRIOS ACOMPANHAM SOZINHOS.
 #
 # COMO USAR:  python scripts/cenarios.py
 # =====================================================================
@@ -15,7 +15,7 @@ import sys          # DÁ ACESSO AO INTERPRETADOR PYTHON EM USO
 
 TOTAL_DE_CENARIOS = 10  # META DEFINIDA PELO GRUPO
 
-# A ORDEM DAS RESPOSTAS SEGUE EXATAMENTE A ORDEM DAS PERGUNTAS DO usuario.py:
+# A ORDEM DAS RESPOSTAS SEGUE EXATAMENTE A ORDEM DAS PERGUNTAS DO main.py:
 # temperatura interna, temperatura externa, integridade, pressão, energia, módulos
 CENARIOS = [
     {
@@ -58,7 +58,7 @@ CENARIOS = [
 # --- LOCALIZA OS ARQUIVOS DO PROJETO ---
 pasta_scripts = os.path.dirname(os.path.abspath(__file__))
 pasta_projeto = os.path.normpath(os.path.join(pasta_scripts, ".."))
-caminho_usuario = os.path.join(pasta_scripts, "usuario.py")
+caminho_main = os.path.join(pasta_scripts, "main.py")
 arquivo_csv = os.path.join(pasta_projeto, "cenarios", "registro_execucoes.csv")
 
 # --- DESCOBRE QUANTOS CENÁRIOS JÁ FORAM REGISTRADOS ---
@@ -95,7 +95,7 @@ for cenario in CENARIOS[:faltam]:  # A FATIA [:faltam] PEGA SÓ OS PRIMEIROS QUE
     entrada = "\n".join(cenario["respostas"]) + "\n"
 
     resultado = subprocess.run(
-        [sys.executable, caminho_usuario],
+        [sys.executable, caminho_main],
         input=entrada,
         capture_output=True,   # CAPTURA O QUE O PROGRAMA IMPRIMIU
         text=True,
