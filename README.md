@@ -181,10 +181,24 @@ anteriores.
 python scripts/missao.py
 ```
 
-O programa faz primeiro a verificação de decolagem (as mesmas seis perguntas do
-`main.py`). Se a decolagem for autorizada, a IA escolhe a rota pela carga da
-bateria e simula a missão hora a hora, em quatro fases: saída da atmosfera,
-cruzeiro interplanetário, captura orbital em Marte e pouso.
+A primeira pergunta é o modo de exibição: `R` mostra o relatório rolando na tela
+(a tabela de horas), `P` abre o **painel ao vivo**, uma tela estilo console de
+foguete que é redesenhada a cada hora da missão, com barras de bateria e margem,
+os sistemas ligados, o histórico da carga e as últimas decisões da IA. Nos dois
+modos o resultado é o mesmo; só muda como você assiste.
+
+Depois vem a verificação de decolagem (as mesmas seis perguntas do `main.py`).
+Se a decolagem for autorizada, a IA escolhe a rota pela carga da bateria e
+simula a missão hora a hora, em quatro fases: saída da atmosfera, cruzeiro
+interplanetário, captura orbital em Marte e pouso.
+
+No modo painel a viagem dura cerca de meio minuto. O painel fica parado no
+lugar e é reescrito a cada hora, por isso precisa caber inteiro na janela:
+**24 linhas por 68 colunas**. Se o terminal for menor, o programa avisa e espera
+você aumentar (no VS Code, maximize o terminal pelo botão `^` do painel). A
+velocidade é a constante `PAUSA` no início de `scripts/painel.py`, em segundos
+entre uma hora e outra. O painel usa só a biblioteca padrão; no prompt antigo do
+Windows, rode `chcp 65001` antes para os caracteres de bloco aparecerem.
 
 A cada hora a IA calcula o saldo de energia (recarga solar menos o consumo dos
 sistemas ligados), decide o estado da nave e age:
@@ -320,6 +334,7 @@ sobre qualquer coisa.
 ├── scripts/
 │   ├── main.py               verificação de decolagem (interativo; importável pela missão)
 │   ├── missao.py             simulação da missão Terra → Marte (gestão energética por IA)
+│   ├── painel.py             painel de voo ao vivo no terminal (usado pelo missao.py)
 │   └── cenarios.py           gerador automático de cenários
 ├── cenarios/                 10 cenários coletados (CSV + relatórios TXT)
 ├── missoes/                  missões simuladas (CSV + caixa preta TXT); criada na 1ª execução

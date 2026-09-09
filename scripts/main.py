@@ -25,7 +25,13 @@ CONSUMO_DECOLAGEM = 300.0   # kWh - consumo estimado na fase de decolagem
 PERDAS = 0.08               # 8% de perdas (conversão do inversor + aquecimento)
 RESERVA_MINIMA = 0.10       # 10% da capacidade deve sobrar como reserva de pouso
 
-
+print("Iniciando verificação do sistema...")
+print("Seja bem vindo ao sistema de verificação de decolagem!")
+print("Por favor, diga seu nome para registro.")
+nome = input("Nome: ")
+print(f"Olá, {nome}! Vamos iniciar a verificação.")
+print("Asseguir iremos coletar as metricas de telemetria.")
+print("Siga as instruções na tela para fornecer os dados necessários.")
 # =====================================================================
 # ETAPA 1 - LEITURA DA TELEMETRIA
 # =====================================================================
@@ -431,3 +437,5 @@ def executar_verificacao(registrar=True):
 #   - "import main" (no missao.py) -> __name__ VALE "main"  -> SO DEFINE AS FUNCOES.
 if __name__ == "__main__":
     executar_verificacao()
+
+

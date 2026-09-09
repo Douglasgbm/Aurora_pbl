@@ -19,13 +19,17 @@
 #   missao_XX_STATUS.txt   -> A "CAIXA PRETA": TODAS AS HORAS E DECISOES DA IA
 #
 # COMO USAR:  python scripts/missao.py
+#   A PRIMEIRA PERGUNTA E O MODO DE EXIBICAO:
+#     R = relatorio (a tabela de horas rolando na tela, como sempre foi)
+#     P = painel ao vivo (a tela e redesenhada a cada hora, como um console de voo)
 # =====================================================================
 
 import csv
 import os
 from datetime import datetime
 
-import main   # O PROGRAMA DE VERIFICACAO DE DECOLAGEM. SUAS FUNCOES VIRAM A FASE 0.
+import main     # O PROGRAMA DE VERIFICACAO DE DECOLAGEM. SUAS FUNCOES VIRAM A FASE 0.
+import painel   # O PAINEL DE VOO (so e usado no modo P).
 
 # =====================================================================
 # CONSTANTES DO MODELO. TUDO EM % DA BATERIA, COMO NO upgrade.md.
@@ -82,15 +86,22 @@ HORAS_SUPERFICIE = 24
 TEMPESTADE_SOLAR = {"inicio": 30, "duracao": 6}    # hora do cruzeiro em que comeca, e quantas horas dura
 TEMPESTADE_POEIRA = {"inicio": 8, "duracao": 12}   # hora na superficie em que comeca, e quantas horas dura
 
+# --- MODO DE EXIBICAO ---
+# False = RELATORIO (as linhas vao aparecendo na tela). True = PAINEL AO VIVO
+# (a tela e desenhada pelo painel.py e o relatorio fica mudo, so vai para o TXT).
+# NAO E UMA CONSTANTE: executar_missao() LIGA ESTA CHAVE QUANDO O USUARIO ESCOLHE "P".
+MODO_PAINEL = False
+
 
 # =====================================================================
 # FUNCOES DE APOIO
 # =====================================================================
 def anotar(relatorio, texto, mostrar=True):
     # GUARDA SEMPRE NO RELATORIO (A "CAIXA PRETA" QUE VAI PARA O TXT).
-    # MOSTRA NA TELA SO SE mostrar FOR True (E O PADRAO).
+    # MOSTRA NA TELA SO SE mostrar FOR True (E O PADRAO) E O PAINEL NAO ESTIVER LIGADO:
+    # NO MODO PAINEL, QUALQUER print() SOLTO EMPURRARIA O PAINEL PARA CIMA.
     relatorio.append(texto)
-    if mostrar:
+    if mostrar and not MODO_PAINEL:
         print(texto)
 
 
@@ -244,6 +255,9 @@ def aplicar_evento(relatorio, energia, custo, descricao):
 def simular_missao(energia_inicial, rota, classificacao_decolagem):
     relatorio = []
     roteiro = montar_roteiro(rota)
+    horas_totais = 0
+    for fase in roteiro:
+        horas_totais = horas_totais + fase["horas"]
     horas_retorno = ROTAS[rota]["horas_cruzeiro"]   # VOLTAR = UM CRUZEIRO INTEIRO NO SENTIDO CONTRARIO
 
     # --- O ESTADO DA NAVE, QUE MUDA A CADA HORA ---
@@ -261,6 +275,8 @@ def simular_missao(energia_inicial, rota, classificacao_decolagem):
     energia_ao_abrir_paineis = None   # None = OS PAINEIS AINDA NAO ABRIRAM
     horas_com_paineis = 0
     falhou = False
+    historico = []           # A BATERIA AO FIM DE CADA HORA (PARA O GRAFICO DO PAINEL)
+    ultimo_painel = None     # OS DADOS DA ULTIMA HORA DESENHADA (PARA A TELA FINAL)
 
     # --- CABECALHO DO RELATORIO ---
     anotar(relatorio, "=" * 78)
@@ -387,12 +403,38 @@ def simular_missao(energia_inicial, rota, classificacao_decolagem):
             if energia < bateria_minima:
                 bateria_minima = energia
                 hora_da_minima = hora_missao
+            historico.append(energia)
 
             # 7) A LINHA DE TELEMETRIA DESTA HORA
             linha = "{:>4} | {:<15} | {:<8} | {:<8} | {:>5.2f} | {:>5.2f} | {:>+5.2f} | {:>6.1f}% | {:>6.1f}".format(
                 hora_missao, local, exposicao, estado, consumo, recarga, saldo, energia, margem)
             mostrar = houve_evento or (hora_na_fase % FREQUENCIA_TELEMETRIA[estado] == 0)
             anotar(relatorio, linha, mostrar)
+
+            # 8) PAINEL AO VIVO (opcional): REDESENHA A TELA COM OS NUMEROS DESTA HORA.
+            #    O PAINEL NAO CONHECE A SIMULACAO; ELE SO RECEBE ESTE DICIONARIO E DESENHA.
+            if MODO_PAINEL:
+                ultimo_painel = {
+                    "hora": hora_missao,
+                    "horas_totais": horas_totais,
+                    "rota": ROTAS[rota]["nome"],
+                    "fase": fase["nome"],
+                    "exposicao": exposicao,
+                    "estado": estado,
+                    "energia": energia,
+                    "margem": margem,
+                    "reserva": RESERVA_CRITICA,
+                    "consumo": consumo,
+                    "recarga": recarga,
+                    "saldo": saldo,
+                    "sistemas": SISTEMAS,
+                    "ligados": ligados,
+                    "historico": historico[-40:],   # SO AS ULTIMAS 40 HORAS CABEM NA TELA
+                    "relatorio": relatorio,
+                    "status": None,
+                    "resumo": None,
+                }
+                painel.desenhar(ultimo_painel, houve_evento)
 
             if energia <= 0:
                 anotar(relatorio, "[FALHA] Bateria esgotada na hora {}. A nave perdeu o suporte a vida.".format(hora_missao))
@@ -410,6 +452,26 @@ def simular_missao(energia_inicial, rota, classificacao_decolagem):
     else:
         status = "SUCESSO"
 
+    resumo = {
+        "status": status,
+        "energia_inicial": energia_inicial,
+        "rota": ROTAS[rota]["nome"],
+        "horas": hora_missao,
+        "bateria_final": energia,
+        "bateria_minima": bateria_minima,
+        "horas_verde": horas_por_estado["VERDE"],
+        "horas_amarelo": horas_por_estado["AMARELO"],
+        "horas_vermelho": horas_por_estado["VERMELHO"],
+        "avisos_risco": avisos_risco,
+    }
+
+    # NO MODO PAINEL, DESENHA UMA ULTIMA VEZ COM O STATUS E O RESUMO DENTRO DO QUADRO.
+    if MODO_PAINEL and ultimo_painel is not None:
+        ultimo_painel["status"] = status
+        ultimo_painel["resumo"] = resumo
+        painel.desenhar(ultimo_painel, True)
+        print("")
+
     anotar(relatorio, "")
     anotar(relatorio, "=" * 78)
     anotar(relatorio, "RESUMO DA MISSAO")
@@ -424,19 +486,6 @@ def simular_missao(energia_inicial, rota, classificacao_decolagem):
     anotar(relatorio, "Avisos de risco     : {}".format(avisos_risco))
     anotar(relatorio, "STATUS              : {}".format(status))
     anotar(relatorio, "=" * 78)
-
-    resumo = {
-        "status": status,
-        "energia_inicial": energia_inicial,
-        "rota": ROTAS[rota]["nome"],
-        "horas": hora_missao,
-        "bateria_final": energia,
-        "bateria_minima": bateria_minima,
-        "horas_verde": horas_por_estado["VERDE"],
-        "horas_amarelo": horas_por_estado["AMARELO"],
-        "horas_vermelho": horas_por_estado["VERMELHO"],
-        "avisos_risco": avisos_risco,
-    }
     return resumo, relatorio
 
 
@@ -495,8 +544,23 @@ def registrar_missao(resumo, relatorio):
 # O FLUXO COMPLETO: FASE 0 (main.py) E DEPOIS A MISSAO
 # =====================================================================
 def executar_missao():
+    # "global" AVISA O PYTHON QUE MODO_PAINEL AQUI E A CAIXA DE FORA (A DO TOPO DO
+    # ARQUIVO), E NAO UMA VARIAVEL NOVA SO DESTA FUNCAO. SEM ISSO, A LINHA
+    # "MODO_PAINEL = True" CRIARIA UMA COPIA LOCAL E anotar() NUNCA FICARIA SABENDO.
+    global MODO_PAINEL
+
     print("=" * 78)
-    print("PROJETO AURORA - FASE 0: VERIFICACAO DE DECOLAGEM")
+    print("PROJETO AURORA - SIMULACAO DE MISSAO")
+    print("=" * 78)
+    resposta = input("Modo de exibicao: [R] relatorio  [P] painel ao vivo  (padrao R): ").strip().upper()
+    if resposta == "P":
+        MODO_PAINEL = True
+        painel.preparar_terminal()
+        painel.verificar_tamanho()
+
+    print("")
+    print("=" * 78)
+    print("FASE 0: VERIFICACAO DE DECOLAGEM")
     print("=" * 78)
     print("")
 
@@ -519,6 +583,10 @@ def executar_missao():
     print("[IA] Nota: no modelo de missao a decolagem custa {:.0f}% da bateria (upgrade.md 4.1).".format(CUSTO_DECOLAGEM))
     print("     A verificacao acima usa 300 kWh + 8% de perdas (32.4%). Sao dois modelos; ver upgrade.md, secao 6.")
     print("")
+
+    if MODO_PAINEL:
+        input("Pressione Enter para iniciar a contagem regressiva... ")
+        painel.contagem_regressiva()
 
     resumo, relatorio = simular_missao(energia_inicial, rota, resultado["classificacao"])
     registrar_missao(resumo, relatorio)

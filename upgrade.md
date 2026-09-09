@@ -265,3 +265,39 @@ conferidos linha a linha), para poder ser importado como a "fase 0" da missão.
 
 Testes feitos: 92% (rota rápida), 85% (rota econômica), 100% (rota rápida) e 70%
 (verificação abortou, missão cancelada). Nenhum erro.
+
+
+
+
+
+
+
+---------
+
+
+1 - colocar o nome do usuario (uma xp de modo geral) 
+
+2 - telemetrias pensando na parte sustentavel 
+
+3 - da ia assinalar possiveis melhores caminhos, abordagens... 
+
+
+
+aprimorar os prints... colocar uma introduçao... 
+
+introduçao..
+
+seja bem vindo a expediçao aurora,(input name for capitao) capitao xxxx, estamos preparando todas as metricas e para isso precisamos de algumas informaçoes, poderia colocar conforme for pedido?
+
+
+segue com as metricas da telemetria.
+
+
+
+Energia perdida (kWh): quantidade de energia correspondente ao percentual de perdas considerado.
+
+Energia útil (kWh): energia que pode ser efetivamente utilizada após descontar as perdas.
+margem de erro dos sensores
+
+Energia restante (kWh): energia que permanece disponível depois de descontar o consumo estimado para a decolagem.
+
