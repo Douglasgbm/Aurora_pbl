@@ -1,0 +1,3 @@
+﻿missao;data_hora;status;energia_inicial_pct;rota;horas;bateria_final_pct;bateria_minima_pct;horas_verde;horas_amarelo;horas_vermelho;avisos_risco
+1;2026-09-09 09:59:14;CONCLUIDA COM RISCO;92.0;Rota Rapida;96;16.1;16.1;2;23;71;2
+2;2026-09-09 09:59:14;CONCLUIDA COM RISCO;85.0;Rota Economica (Hohmann);136;19.3;19.3;0;31;105;2

@@ -175,6 +175,38 @@ pip install matplotlib
 Sem ela, nada quebra — os mesmos dados aparecem em formato de tabela nas células
 anteriores.
 
+### 5. Simular a missão Terra → Marte
+
+```bash
+python scripts/missao.py
+```
+
+O programa faz primeiro a verificação de decolagem (as mesmas seis perguntas do
+`main.py`). Se a decolagem for autorizada, a IA escolhe a rota pela carga da
+bateria e simula a missão hora a hora, em quatro fases: saída da atmosfera,
+cruzeiro interplanetário, captura orbital em Marte e pouso.
+
+A cada hora a IA calcula o saldo de energia (recarga solar menos o consumo dos
+sistemas ligados), decide o estado da nave e age:
+
+| Estado | Quando | O que a IA faz |
+| :--- | :--- | :--- |
+| 🟢 Verde | bateria alta | tudo ligado |
+| 🟡 Amarelo | bateria média, ou margem de retorno ameaçada | desliga a prioridade 3, comunicação em modo econômico |
+| 🔴 Vermelho | bateria baixa, tempestade, ou margem crítica | só o essencial (prioridade 1) |
+
+Cada missão grava dois arquivos na pasta `missoes/`:
+
+- `registro_missoes.csv` — uma linha por missão (rota, horas, bateria final, horas em cada estado)
+- `missao_XX_STATUS.txt` — a "caixa preta": todas as horas e todas as decisões da IA
+
+A tela mostra menos linhas que o arquivo: em Amarelo a telemetria sai a cada 2 h,
+em Vermelho a cada 4 h. O arquivo guarda tudo.
+
+A especificação do modelo (custos, prioridades, recarga, fases) está em
+[upgrade.md](upgrade.md). A seção 6 desse documento lista as decisões tomadas
+onde a especificação não dava número.
+
 ### Problemas comuns
 
 | Sintoma | Causa provável | Solução |
@@ -286,12 +318,15 @@ sobre qualquer coisa.
 
 ```
 ├── scripts/
-│   ├── main.py               programa principal (interativo)
+│   ├── main.py               verificação de decolagem (interativo; importável pela missão)
+│   ├── missao.py             simulação da missão Terra → Marte (gestão energética por IA)
 │   └── cenarios.py           gerador automático de cenários
 ├── cenarios/                 10 cenários coletados (CSV + relatórios TXT)
+├── missoes/                  missões simuladas (CSV + caixa preta TXT); criada na 1ª execução
 ├── notebook/
 │   └── aurora_pbl.ipynb      notebook com os itens 1.1 a 1.6
 ├── ROADMAP.MD                especificação, faixas seguras e fluxogramas
+├── upgrade.md                especificação da simulação de missão
 ├── analise_assistida_ia.md   classificação de dados, anomalias e riscos
 └── reflexao_critica.md       ética, impacto social e sustentabilidade
 ```
@@ -301,6 +336,7 @@ sobre qualquer coisa.
 | Documento | Conteúdo |
 | :--- | :--- |
 | [ROADMAP.MD](ROADMAP.MD) | Faixas seguras, pseudocódigo e fluxogramas |
+| [upgrade.md](upgrade.md) | Simulação de missão: prioridades, estados, custos, recarga, fases e rota |
 | [analise_assistida_ia.md](analise_assistida_ia.md) | Classificação dos dados, anomalias e riscos |
 | [reflexao_critica.md](reflexao_critica.md) | Ética, impacto social e sustentabilidade |
 
