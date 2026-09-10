@@ -2,22 +2,44 @@
 # GERADOR DE CENÁRIOS DE TESTE - PROJETO AURORA
 # =====================================================================
 # ESTE SCRIPT NÃO REFAZ A LÓGICA DE VERIFICAÇÃO. ELE EXECUTA O PRÓPRIO
-# usuario.py E ENTREGA AS RESPOSTAS AUTOMATICAMENTE, COMO SE ALGUÉM
+# main.py E ENTREGA AS RESPOSTAS AUTOMATICAMENTE, COMO SE ALGUÉM
 # ESTIVESSE DIGITANDO. ASSIM EXISTE UMA ÚNICA FONTE DA VERDADE: SE AS
-# REGRAS MUDAREM NO usuario.py, OS CENÁRIOS ACOMPANHAM SOZINHOS.
+# REGRAS MUDAREM NO main.py, OS CENÁRIOS ACOMPANHAM SOZINHOS.
+#
+# O main.py GRAVA CADA EXECUÇÃO EM cenarios/ E, QUANDO A DECOLAGEM É
+# AUTORIZADA, SEGUE PARA A MISSÃO E GRAVA TAMBÉM EM missoes/.
 #
 # COMO USAR:  python scripts/cenarios.py
+# PARA GERAR TUDO DE NOVO: apague os arquivos de cenarios/ e missoes/ antes.
 # =====================================================================
 
 import os
 import subprocess   # PERMITE EXECUTAR OUTRO PROGRAMA A PARTIR DESTE
 import sys          # DÁ ACESSO AO INTERPRETADOR PYTHON EM USO
 
-TOTAL_DE_CENARIOS = 10  # META DEFINIDA PELO GRUPO
+TOTAL_DE_CENARIOS = 10      # META DEFINIDA PELO GRUPO
+NOME_CAPITAO = "Douglas"    # A PRIMEIRA PERGUNTA DO main.py É O NOME DO CAPITÃO
 
-# A ORDEM DAS RESPOSTAS SEGUE EXATAMENTE A ORDEM DAS PERGUNTAS DO usuario.py:
-# temperatura interna, temperatura externa, integridade, pressão, energia, módulos
+# A ORDEM DAS RESPOSTAS SEGUE EXATAMENTE A ORDEM DAS PERGUNTAS DO main.py:
+# temperatura interna, temperatura externa, integridade, pressão, energia, módulos.
+# (O NOME DO CAPITÃO É ACRESCENTADO NA FRENTE, AUTOMATICAMENTE.)
+# A LISTA ESTÁ NA MESMA ORDEM DA TABELA "Cenários coletados" DO README.
 CENARIOS = [
+    {
+        "titulo": "Tudo fora da faixa",
+        "esperado": "HORRIVEL",
+        "respostas": ["10", "50", "0", "350", "70", "S"],
+    },
+    {
+        "titulo": "Pressao e energia exatamente no limite",
+        "esperado": "MEDIO",
+        "respostas": ["25", "30", "1", "550", "80", "S"],
+    },
+    {
+        "titulo": "Bateria cheia em dia quente",
+        "esperado": "OTIMO",
+        "respostas": ["25", "30", "1", "480", "100", "S"],
+    },
     {
         "titulo": "Operacao padrao em dia ameno",
         "esperado": "OTIMO",
@@ -58,7 +80,7 @@ CENARIOS = [
 # --- LOCALIZA OS ARQUIVOS DO PROJETO ---
 pasta_scripts = os.path.dirname(os.path.abspath(__file__))
 pasta_projeto = os.path.normpath(os.path.join(pasta_scripts, ".."))
-caminho_usuario = os.path.join(pasta_scripts, "usuario.py")
+caminho_main = os.path.join(pasta_scripts, "main.py")
 arquivo_csv = os.path.join(pasta_projeto, "cenarios", "registro_execucoes.csv")
 
 # --- DESCOBRE QUANTOS CENÁRIOS JÁ FORAM REGISTRADOS ---
@@ -82,7 +104,7 @@ print("")
 
 if faltam <= 0:
     print("Nada a fazer: a meta de {} cenarios ja foi atingida.".format(TOTAL_DE_CENARIOS))
-    print("Para gerar novamente, apague os arquivos da pasta cenarios/.")
+    print("Para gerar novamente, apague os arquivos das pastas cenarios/ e missoes/.")
     sys.exit()  # ENCERRA O PROGRAMA AQUI
 
 # GARANTE QUE OS ACENTOS SEJAM LIDOS CORRETAMENTE NO WINDOWS
@@ -90,12 +112,13 @@ ambiente = os.environ.copy()
 ambiente["PYTHONIOENCODING"] = "utf-8"
 
 # --- EXECUTA OS CENÁRIOS QUE FALTAM ---
-for cenario in CENARIOS[:faltam]:  # A FATIA [:faltam] PEGA SÓ OS PRIMEIROS QUE FALTAM
+# A FATIA [ja_registrados:] PULA OS QUE JÁ EXISTEM E CONTINUA DE ONDE PAROU.
+for cenario in CENARIOS[ja_registrados:]:
     # JUNTA AS RESPOSTAS EM UM ÚNICO TEXTO, UMA POR LINHA (COMO SE FOSSEM DIGITADAS)
-    entrada = "\n".join(cenario["respostas"]) + "\n"
+    entrada = "\n".join([NOME_CAPITAO] + cenario["respostas"]) + "\n"
 
     resultado = subprocess.run(
-        [sys.executable, caminho_usuario],
+        [sys.executable, caminho_main],
         input=entrada,
         capture_output=True,   # CAPTURA O QUE O PROGRAMA IMPRIMIU
         text=True,
@@ -103,21 +126,26 @@ for cenario in CENARIOS[:faltam]:  # A FATIA [:faltam] PEGA SÓ OS PRIMEIROS QUE
         env=ambiente,
     )
 
-    # PROCURA NA SAÍDA A LINHA QUE CONFIRMA O REGISTRO
+    # PROCURA NA SAÍDA AS LINHAS QUE CONFIRMAM OS REGISTROS
     confirmacao = ""
+    missao = ""
     for linha in resultado.stdout.splitlines():
         if linha.startswith("Cenario registrado"):
             confirmacao = linha
+        if linha.startswith("Missao registrada"):
+            missao = linha
 
     print("-> " + cenario["titulo"])
     print("   dados     : " + " | ".join(cenario["respostas"]))
     if confirmacao:
         print("   resultado : " + confirmacao.replace("Cenario registrado como ", ""))
+        if missao:
+            print("   missao    : " + missao.replace("Missao registrada como ", ""))
     else:
         print("   ERRO ao executar este cenario:")
         print(resultado.stderr.strip())
     print("")
 
 print("=" * 62)
-print("Concluido. Confira a pasta cenarios/ e o arquivo registro_execucoes.csv")
+print("Concluido. Confira as pastas cenarios/ e missoes/.")
 print("=" * 62)
