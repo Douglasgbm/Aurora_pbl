@@ -1,6 +1,7 @@
 ==============================================================
 PROJETO AURORA - REGISTRO DE EXECUCAO Nº 04
-Data/hora    : 29/08/2026 14:50:17
+Data/hora    : 09/09/2026 21:28:23
+Capitao      : Douglas
 Classificacao: OTIMO
 ==============================================================
 
@@ -14,9 +15,11 @@ DADOS DE TELEMETRIA INFORMADOS
   Capacidade bateria  : 1000.0 kWh
 
 ANALISE ENERGETICA
-  Disponivel na bateria : 920.0 kWh
-  Consumo + perdas      : 324.0 kWh
-  Sobra apos decolagem  : 596.0 kWh (59.6%)
+  Energia disponivel       : 920.0 kWh
+  Energia perdida (8%)     : 73.6 kWh
+  Energia util             : 846.4 kWh
+  Consumo na decolagem     : 300.0 kWh
+  Energia apos a decolagem : 546.4 kWh (54.6%)
 
 ANALISE ASSISTIDA POR IA
   Nenhuma discrepancia encontrada.
