@@ -18,7 +18,11 @@ import subprocess   # PERMITE EXECUTAR OUTRO PROGRAMA A PARTIR DESTE
 import sys          # DÁ ACESSO AO INTERPRETADOR PYTHON EM USO
 
 TOTAL_DE_CENARIOS = 10      # META DEFINIDA PELO GRUPO
-NOME_CAPITAO = "Douglas"    # A PRIMEIRA PERGUNTA DO main.py É O NOME DO CAPITÃO
+
+# A PRIMEIRA PERGUNTA DO main.py É O NOME DO CAPITÃO. OS INTEGRANTES DO GRUPO
+# SE REVEZAM: CENÁRIO 1 É DO PRIMEIRO NOME, O 2 DO SEGUNDO, O 3 DO TERCEIRO,
+# O 4 VOLTA PARA O PRIMEIRO, E ASSIM POR DIANTE.
+CAPITAES = ["Douglas", "Marcelo", "Alice"]
 
 # A ORDEM DAS RESPOSTAS SEGUE EXATAMENTE A ORDEM DAS PERGUNTAS DO main.py:
 # temperatura interna, temperatura externa, integridade, pressão, energia, módulos.
@@ -112,10 +116,15 @@ ambiente = os.environ.copy()
 ambiente["PYTHONIOENCODING"] = "utf-8"
 
 # --- EXECUTA OS CENÁRIOS QUE FALTAM ---
-# A FATIA [ja_registrados:] PULA OS QUE JÁ EXISTEM E CONTINUA DE ONDE PAROU.
-for cenario in CENARIOS[ja_registrados:]:
+# O range COMEÇA EM ja_registrados PARA PULAR OS QUE JÁ EXISTEM E CONTINUAR DE ONDE PAROU.
+for numero in range(ja_registrados, TOTAL_DE_CENARIOS):
+    cenario = CENARIOS[numero]
+
+    # O RESTO DA DIVISÃO POR 3 ESCOLHE O CAPITÃO: 0 -> Douglas, 1 -> Marcelo, 2 -> Alice
+    capitao = CAPITAES[numero % len(CAPITAES)]
+
     # JUNTA AS RESPOSTAS EM UM ÚNICO TEXTO, UMA POR LINHA (COMO SE FOSSEM DIGITADAS)
-    entrada = "\n".join([NOME_CAPITAO] + cenario["respostas"]) + "\n"
+    entrada = "\n".join([capitao] + cenario["respostas"]) + "\n"
 
     resultado = subprocess.run(
         [sys.executable, caminho_main],
@@ -136,6 +145,7 @@ for cenario in CENARIOS[ja_registrados:]:
             missao = linha
 
     print("-> " + cenario["titulo"])
+    print("   capitao   : " + capitao)
     print("   dados     : " + " | ".join(cenario["respostas"]))
     if confirmacao:
         print("   resultado : " + confirmacao.replace("Cenario registrado como ", ""))

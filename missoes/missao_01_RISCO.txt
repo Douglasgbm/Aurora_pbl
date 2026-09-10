@@ -1,9 +1,9 @@
-Missao Nº 01  |  09/09/2026 21:28:22
+Missao Nº 01  |  10/09/2026 10:11:35
 
 ==============================================================================
 PROJETO AURORA - SIMULACAO DE MISSAO TERRA -> MARTE
 ==============================================================================
-Capitao                  : Douglas
+Capitao                  : Marcelo
 Verificacao de decolagem : MEDIO (bateria em 80.0%)
 Rota escolhida pela IA   : Rota Economica (Hohmann) (100 h de cruzeiro, 2 manobra(s))
 Reserva critica de volta : 30% da bateria
@@ -195,7 +195,7 @@ HORA | FASE            | PAINEIS  | ESTADO   |  CONS | RECAR | SALDO | BATERIA |
 ==============================================================================
 RESUMO DA MISSAO TERRA -> MARTE
 ==============================================================================
-Capitao                  : Douglas
+Capitao                  : Marcelo
 Verificacao de decolagem : MEDIO (bateria em 80.0%)
 Rota escolhida pela IA   : Rota Economica (Hohmann) (100 h de cruzeiro, 2 manobra(s))
 Reserva critica de volta : 30% da bateria

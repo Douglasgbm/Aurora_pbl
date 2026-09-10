@@ -1,9 +1,9 @@
-Missao Nº 02  |  09/09/2026 21:28:23
+Missao Nº 02  |  10/09/2026 10:11:36
 
 ==============================================================================
 PROJETO AURORA - SIMULACAO DE MISSAO TERRA -> MARTE
 ==============================================================================
-Capitao                  : Douglas
+Capitao                  : Alice
 Verificacao de decolagem : OTIMO (bateria em 100.0%)
 Rota escolhida pela IA   : Rota Rapida (60 h de cruzeiro, 4 manobra(s))
 Reserva critica de volta : 30% da bateria
@@ -156,7 +156,7 @@ HORA | FASE            | PAINEIS  | ESTADO   |  CONS | RECAR | SALDO | BATERIA |
 ==============================================================================
 RESUMO DA MISSAO TERRA -> MARTE
 ==============================================================================
-Capitao                  : Douglas
+Capitao                  : Alice
 Verificacao de decolagem : OTIMO (bateria em 100.0%)
 Rota escolhida pela IA   : Rota Rapida (60 h de cruzeiro, 4 manobra(s))
 Reserva critica de volta : 30% da bateria
