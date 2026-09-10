@@ -206,26 +206,28 @@ if local == "Superfície":
 
 ## 6. Como foi implementado (09/09/2026)
 
-Tudo acima virou código em [scripts/missao.py](scripts/missao.py). O `main.py` foi
-reorganizado em funções, sem mudar o comportamento (os 10 cenários foram regerados e
-conferidos linha a linha), para poder ser importado como a "fase 0" da missão.
+Tudo acima virou código dentro de [scripts/main.py](scripts/main.py), na **ETAPA 7**.
+Numa primeira versão a missão ficou num arquivo separado (`missao.py`) que importava
+o `main.py`; depois o projeto foi reorganizado como um programa único e linear, sem
+funções, com todas as constantes no topo. Os 10 cenários e as missões de teste foram
+regerados e conferidos linha a linha antes e depois da reorganização.
 
 ### 6.1 Mapa: seção do documento → código
 
-| Seção     | O que é                                      | Onde está no `missao.py`                                        |
-| :-------: | :------------------------------------------- | :-------------------------------------------------------------- |
-| 1         | Conceito atual (sistema especialista)        | `main.py`, chamado em `executar_missao()`                        |
-| 2.1       | Hierarquia de prioridades                    | lista `SISTEMAS`, campo `prioridade`                            |
-| 2.2       | Estados Verde / Amarelo / Vermelho           | `decidir_estado()`, `consumo_do_estado()`, `FREQUENCIA_TELEMETRIA` |
-| 3.1       | Gastos pontuais × gastos constantes          | `aplicar_evento()` e o loop de horas em `simular_missao()`      |
-| 3.2       | Margem de retorno e desligamento escalonado  | `calcular_margem()`, variável `alerta_margem`, `piorar()`       |
-| 3.3 / 4.3 | Recarga solar                                | dicionário `RECARGA`, `definir_exposicao()`                     |
-| 4.1       | Custos pontuais                              | `CUSTO_DECOLAGEM`, `CUSTO_MANOBRA`, `CUSTO_POUSO`               |
-| 4.2       | Consumo por sistema                          | lista `SISTEMAS`                                                |
-| 4.4       | Saldo = Recarga − Sistemas ativos            | passo 5 do loop de horas                                        |
-| 5.1       | Fases e riscos                               | `montar_roteiro()`, `definir_clima()`                           |
-| 5.2       | Rota rápida × econômica                      | `ROTAS`, `escolher_rota()`                                      |
-| 5.3       | Checkpoints                                  | o bloco `if local == ...` no início de cada fase                |
+| Seção     | O que é                                      | Onde está no `main.py`                                              |
+| :-------: | :------------------------------------------- | :------------------------------------------------------------------ |
+| 1         | Conceito atual (sistema especialista)        | ETAPAS 1 a 6 (telemetria, verificações, IA, parecer, registro)      |
+| 2.1       | Hierarquia de prioridades                    | lista `SISTEMAS`, campo `prioridade`                                |
+| 2.2       | Estados Verde / Amarelo / Vermelho           | passos 4 e 5 do loop de horas; `FREQUENCIA_TELEMETRIA`, `DESCRICAO_ESTADO` |
+| 3.1       | Gastos pontuais × gastos constantes          | eventos nos checkpoints e passo 2 (manobras) × passo 7 (balanço)    |
+| 3.2       | Margem de retorno e desligamento escalonado  | passo 3 do loop de horas; variável `alerta_margem`; "desce um degrau" no passo 4 |
+| 3.3 / 4.3 | Recarga solar                                | dicionário `RECARGA`, passo 6 do loop de horas                      |
+| 4.1       | Custos pontuais                              | `CUSTO_DECOLAGEM`, `CUSTO_MANOBRA`, `CUSTO_FRENAGEM`, `CUSTO_POUSO`  |
+| 4.2       | Consumo por sistema                          | lista `SISTEMAS`                                                    |
+| 4.4       | Saldo = Recarga − Sistemas ativos            | passo 7 do loop de horas                                            |
+| 5.1       | Fases e riscos                               | lista `roteiro` (7.2) e passo 1 do loop de horas (clima)            |
+| 5.2       | Rota rápida × econômica                      | `ROTAS`, `LIMIAR_ROTA_RAPIDA`, item 7.1                             |
+| 5.3       | Checkpoints                                  | o bloco `if local == ...` no início de cada fase                    |
 
 ### 6.2 Decisões tomadas onde o documento não dava o número (revisar)
 
@@ -243,13 +245,13 @@ conferidos linha a linha), para poder ser importado como a "fase 0" da missão.
 | 10 | "Tempo de retorno" da fórmula da margem   | um cruzeiro inteiro de volta                                               | `horas_retorno` em `simular_missao()` |
 | 11 | "Consumo médio" da fórmula da margem      | queda média da bateria por hora desde a abertura dos painéis (já descontada a recarga) | `calcular_margem()`   |
 | 12 | Redução de frequência de telemetria (2.2) | na tela: Amarelo a cada 2 h, Vermelho a cada 4 h; o TXT guarda todas as horas | `FREQUENCIA_TELEMETRIA`        |
-| 13 | Eventos programados, não aleatórios       | a mesma entrada produz sempre o mesmo resultado                            | `definir_clima()`                 |
+| 13 | Eventos programados, não aleatórios       | a mesma entrada produz sempre o mesmo resultado                            | passo 1 do loop de horas          |
 
 ### 6.3 Conflitos entre este documento e o `main.py` (ainda em aberto)
 
 | Item                | `main.py` (verificação)     | `upgrade.md` (missão) | Como está hoje                                                    |
 | :------------------ | :-------------------------- | :-------------------- | :---------------------------------------------------------------- |
-| Custo da decolagem  | 300 kWh + 8% = 32,4%        | 20%                   | os dois convivem: a verificação usa 32,4%, a missão usa 20%       |
+| Custo da decolagem  | 300 kWh depois de 8% de perdas (~32,6% de carga) | 20%  | os dois convivem: a verificação usa ~32,6%, a missão usa 20%      |
 | Reserva mínima      | 10% depois da decolagem     | 30% pra voltar        | os dois convivem, são regras diferentes                           |
 | Unidade             | kWh (capacidade 1000)       | %                     | a missão trabalha em %; 1% = 10 kWh                               |
 
@@ -266,38 +268,25 @@ conferidos linha a linha), para poder ser importado como a "fase 0" da missão.
 Testes feitos: 92% (rota rápida), 85% (rota econômica), 100% (rota rápida) e 70%
 (verificação abortou, missão cancelada). Nenhum erro.
 
+---
 
+## 7. Próximos passos (anotações de 09/09/2026)
 
+### Feito
 
+- **Introdução e nome do capitão.** O programa abre com "Seja bem-vindo à Expedição
+  Aurora", pede o nome e o usa nas mensagens e nos registros (ETAPA 0).
+- **Análise energética no modelo da disciplina.** As perdas passaram a ser descontadas
+  da energia armazenada, não do consumo: energia disponível → energia perdida → energia
+  útil → energia restante, com esses nomes na tela, no TXT e no CSV (ETAPA 2).
+- **Tela em blocos.** Telemetria informada, análise energética e verificações de
+  segurança aparecem separadas, cada uma com seu cabeçalho.
+- **Reorganização.** Um programa só, linear, constantes no topo. `missao.py` e
+  `cenarios.py` deixaram de existir; `painel.py` ficou como experimento, sem uso.
 
+### A fazer
 
-
----------
-
-
-1 - colocar o nome do usuario (uma xp de modo geral) 
-
-2 - telemetrias pensando na parte sustentavel 
-
-3 - da ia assinalar possiveis melhores caminhos, abordagens... 
-
-
-
-aprimorar os prints... colocar uma introduçao... 
-
-introduçao..
-
-seja bem vindo a expediçao aurora,(input name for capitao) capitao xxxx, estamos preparando todas as metricas e para isso precisamos de algumas informaçoes, poderia colocar conforme for pedido?
-
-
-segue com as metricas da telemetria.
-
-
-
-Energia perdida (kWh): quantidade de energia correspondente ao percentual de perdas considerado.
-
-Energia útil (kWh): energia que pode ser efetivamente utilizada após descontar as perdas.
-margem de erro dos sensores
-
-Energia restante (kWh): energia que permanece disponível depois de descontar o consumo estimado para a decolagem.
+1. Telemetrias pensando na parte sustentável.
+2. A IA assinalar possíveis melhores caminhos e abordagens.
+3. Decidir se o `painel.py` entra no `main.py` e como.
 

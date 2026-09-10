@@ -23,7 +23,23 @@ isoladamente; o conjunto delas, ainda assim, falhava.
 
 ## Como funciona
 
-O programa trabalha em três fases:
+Todo o projeto é **um único programa**, `scripts/main.py`, escrito como um
+roteiro lido de cima para baixo: as constantes ficam no topo, e cada etapa vem
+em sequência, sem funções. A verificação de decolagem trabalha em três fases;
+se a decolagem for autorizada, o mesmo programa segue para a simulação da
+missão Terra → Marte (descrita mais abaixo).
+
+### Fase 0 — Análise energética
+
+Antes das verificações, o programa converte a carga digitada em energia e segue
+os termos do material da disciplina, nesta ordem:
+
+| Termo | Cálculo | Exemplo (carga 80 %) |
+| :--- | :--- | --: |
+| Energia disponível (kWh) | capacidade total × carga atual | 800 |
+| Energia perdida (kWh) | energia disponível × perdas (8 %) | 64 |
+| Energia útil (kWh) | energia disponível − energia perdida | 736 |
+| Energia restante (kWh) | energia útil − consumo da decolagem (300 kWh) | 436 |
 
 ### Fase 1 — Verificações de segurança
 
@@ -79,7 +95,7 @@ observe estes três pontos" devolve a decisão a quem tem responsabilidade sobre
 **Python 3.6 ou superior** é o único requisito obrigatório.
 
 **Não é necessário instalar nenhuma dependência.** O programa usa apenas a
-biblioteca padrão do Python (`csv`, `os`, `datetime`, `subprocess`). Não há
+biblioteca padrão do Python (`csv`, `os`, `datetime`). Não há
 `requirements.txt` porque não há o que instalar.
 
 Para verificar se o Python já está instalado, abra o terminal e digite:
@@ -115,10 +131,12 @@ repositório, extraia a pasta e abra o terminal dentro dela.
 python scripts/main.py
 ```
 
-O programa solicita os seis parâmetros pelo teclado, um de cada vez:
+O programa começa pedindo o nome do capitão (só para o registro) e depois
+solicita os seis parâmetros pelo teclado, um de cada vez:
 
 | Pergunta | O que digitar | Exemplo |
 | :--- | :--- | :--- |
+| Identifique-se, capitão | seu nome | `Douglas` |
 | Temperatura interna | número em °C | `23` |
 | Temperatura externa | número em °C | `20` |
 | Integridade | `1` para OK, `0` para falha | `1` |
@@ -135,21 +153,15 @@ Cada execução grava automaticamente dois arquivos na pasta `cenarios/`:
 - `cenario_XX_CLASSE.txt` — o relatório completo daquela execução
 
 A pasta é criada sozinha na primeira execução, e a numeração continua de onde
-parou.
+parou. Se a decolagem for autorizada, o programa continua direto para a missão
+Terra → Marte (item 4 abaixo); se for abortada, ele encerra com a mensagem
+`MISSAO CANCELADA`.
 
-### 3. Gerar os cenários de teste (opcional)
+Para reproduzir os 10 cenários da tabela mais abaixo, basta digitar as
+entradas de cada linha. Para recomeçar a numeração do zero, apague os arquivos
+da pasta `cenarios/` antes.
 
-```bash
-python scripts/cenarios.py
-```
-
-Executa os cenários pré-definidos que ainda faltam para completar a meta de 10,
-sem precisar digitar nada. Rodar duas vezes não duplica registros — o script conta
-o que já existe e para quando a meta é atingida.
-
-Para gerar tudo de novo do zero, apague os arquivos da pasta `cenarios/` antes.
-
-### 4. Abrir o notebook
+### 3. Abrir o notebook
 
 O notebook reúne os itens 1.1 a 1.6 e executa de ponta a ponta. Diferente dos
 scripts, ele **exige a instalação do Jupyter**:
@@ -175,30 +187,13 @@ pip install matplotlib
 Sem ela, nada quebra — os mesmos dados aparecem em formato de tabela nas células
 anteriores.
 
-### 5. Simular a missão Terra → Marte
+### 4. A missão Terra → Marte
 
-```bash
-python scripts/missao.py
-```
-
-A primeira pergunta é o modo de exibição: `R` mostra o relatório rolando na tela
-(a tabela de horas), `P` abre o **painel ao vivo**, uma tela estilo console de
-foguete que é redesenhada a cada hora da missão, com barras de bateria e margem,
-os sistemas ligados, o histórico da carga e as últimas decisões da IA. Nos dois
-modos o resultado é o mesmo; só muda como você assiste.
-
-Depois vem a verificação de decolagem (as mesmas seis perguntas do `main.py`).
-Se a decolagem for autorizada, a IA escolhe a rota pela carga da bateria e
-simula a missão hora a hora, em quatro fases: saída da atmosfera, cruzeiro
-interplanetário, captura orbital em Marte e pouso.
-
-No modo painel a viagem dura cerca de meio minuto. O painel fica parado no
-lugar e é reescrito a cada hora, por isso precisa caber inteiro na janela:
-**24 linhas por 68 colunas**. Se o terminal for menor, o programa avisa e espera
-você aumentar (no VS Code, maximize o terminal pelo botão `^` do painel). A
-velocidade é a constante `PAUSA` no início de `scripts/painel.py`, em segundos
-entre uma hora e outra. O painel usa só a biblioteca padrão; no prompt antigo do
-Windows, rode `chcp 65001` antes para os caracteres de bloco aparecerem.
+Não há comando separado: a missão é a continuação do `main.py` quando a
+decolagem é autorizada. A IA escolhe a rota pela carga da bateria (90 % ou mais
+vai pela rota rápida; abaixo disso, pela econômica) e simula a missão hora a
+hora, em quatro fases: saída da atmosfera, cruzeiro interplanetário, captura
+orbital em Marte e pouso. A tabela de horas vai rolando na tela.
 
 A cada hora a IA calcula o saldo de energia (recarga solar menos o consumo dos
 sistemas ligados), decide o estado da nave e age:
@@ -221,6 +216,10 @@ A especificação do modelo (custos, prioridades, recarga, fases) está em
 [upgrade.md](upgrade.md). A seção 6 desse documento lista as decisões tomadas
 onde a especificação não dava número.
 
+O arquivo `scripts/painel.py` é um painel de voo ao vivo (tela estilo console
+de foguete, redesenhada a cada hora). Ele está no repositório como experimento e
+**ainda não é usado** pelo `main.py`.
+
 ### Problemas comuns
 
 | Sintoma | Causa provável | Solução |
@@ -239,14 +238,37 @@ onde a especificação não dava número.
 Entrada: `29` `-8` `1` `535` `93` `S`
 
 ```
+==============================================================
+TELEMETRIA INFORMADA
+==============================================================
+  Temperatura interna : 29.0 C
+  Temperatura externa : -8.0 C
+  Integridade         : 1 (OK)
+  Pressao dos tanques : 535.0 psi
+  Energia             : 93.0 %
+  Modulos online      : SIM
+
+==============================================================
+ANALISE ENERGETICA
+==============================================================
+  Capacidade total            : 1000.0 kWh
+  Carga atual                 : 93.0 %
+  Energia disponivel          : 930.0 kWh
+  Perdas energeticas          : 8 %
+  Energia perdida             : 74.4 kWh
+  Energia util                : 855.6 kWh
+  Consumo na decolagem        : 300.0 kWh
+  Energia apos a decolagem    : 555.6 kWh (55.6% da bateria)
+  Resultado: energia suficiente para a decolagem.
+
+==============================================================
+VERIFICACOES DE SEGURANCA
+==============================================================
 Temperatura Interna: OK
 Temperatura Externa: OK
 Integridade: OK
 Pressão dos Tanques: OK
 Energia: OK
-  Disponivel na bateria : 930.0 kWh (93%)
-  Consumo + perdas      : 324.0 kWh
-  Sobra apos decolagem  : 606.0 kWh (60.6%)
 Módulos: OK
 
 ==============================================================
@@ -276,6 +298,8 @@ Cenario registrado como cenario_06_MEDIO.txt (classificacao: MEDIO)
 Entrada: `22` `25` `3` `500` `105` `S`
 
 ```
+  Energia disponivel          : 1050.0 kWh   <- 1050 kWh numa bateria de 1000 kWh
+  ...
 Integridade: OK                      <- a verificação tradicional aprovou
 Energia: OK                          <- a verificação tradicional aprovou
 
@@ -289,6 +313,8 @@ DISCREPÂNCIAS CRÍTICAS (telemetria não confiável):
    A decolagem não pode ser avaliada com telemetria corrompida.
 
 Decolagem Não Autorizada!            <- a análise barrou
+
+MISSAO CANCELADA: a verificacao de decolagem nao autorizou o lancamento.
 ```
 
 <!-- ESPAÇO PARA OS PRINTS EM IMAGEM
@@ -332,10 +358,8 @@ sobre qualquer coisa.
 
 ```
 ├── scripts/
-│   ├── main.py               verificação de decolagem (interativo; importável pela missão)
-│   ├── missao.py             simulação da missão Terra → Marte (gestão energética por IA)
-│   ├── painel.py             painel de voo ao vivo no terminal (usado pelo missao.py)
-│   └── cenarios.py           gerador automático de cenários
+│   ├── main.py               O PROGRAMA: verificação de decolagem + missão Terra → Marte
+│   └── painel.py             painel de voo ao vivo (experimento, ainda não usado pelo main.py)
 ├── cenarios/                 10 cenários coletados (CSV + relatórios TXT)
 ├── missoes/                  missões simuladas (CSV + caixa preta TXT); criada na 1ª execução
 ├── notebook/
@@ -366,9 +390,10 @@ GitHub ao abrir o `ROADMAP.MD`.
 | :--- | :--- | :--- |
 | Capacidade da bateria | 1000 kWh | Definida na especificação |
 | Consumo na decolagem | 300 kWh | Definido na especificação |
-| Perdas energéticas | 8 % | Estimativa do grupo (conversão + aquecimento) |
+| Perdas energéticas | 8 % da energia armazenada | Estimativa do grupo (conversão + aquecimento) |
 | Reserva mínima de pouso | 10 % | Decisão do grupo |
 
 Vale registrar: com 300 kWh de consumo e 8 % de perdas, a energia mínima
-*matemática* para decolar seria de 32,4 %. O limite de 80 % não vem do consumo da
-decolagem — ele existe para garantir autonomia **depois** dela.
+*matemática* para decolar seria de cerca de 32,6 % de carga (326 kWh disponíveis,
+300 kWh úteis). O limite de 80 % não vem do consumo da decolagem — ele existe
+para garantir autonomia **depois** dela.
