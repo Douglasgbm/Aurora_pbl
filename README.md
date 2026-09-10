@@ -193,7 +193,8 @@ Não há comando separado: a missão é a continuação do `main.py` quando a
 decolagem é autorizada. A IA escolhe a rota pela carga da bateria (90 % ou mais
 vai pela rota rápida; abaixo disso, pela econômica) e simula a missão hora a
 hora, em quatro fases: saída da atmosfera, cruzeiro interplanetário, captura
-orbital em Marte e pouso. A tabela de horas vai rolando na tela.
+orbital em Marte e pouso. Na tela aparece só o **resumo da missão** no fim
+(capitão, verificação, rota, horas, bateria, horas em cada estado e status).
 
 A cada hora a IA calcula o saldo de energia (recarga solar menos o consumo dos
 sistemas ligados), decide o estado da nave e age:
@@ -209,8 +210,11 @@ Cada missão grava dois arquivos na pasta `missoes/`:
 - `registro_missoes.csv` — uma linha por missão (rota, horas, bateria final, horas em cada estado)
 - `missao_XX_STATUS.txt` — a "caixa preta": todas as horas e todas as decisões da IA
 
-A tela mostra menos linhas que o arquivo: em Amarelo a telemetria sai a cada 2 h,
-em Vermelho a cada 4 h. O arquivo guarda tudo.
+Para assistir ao voo hora a hora na tela (fases, decisões da IA, eventos e a
+tabela de telemetria), troque a constante `MOSTRAR_VOO_NA_TELA` para `True` no
+início do `main.py`. Nesse modo a tela mostra menos linhas que o arquivo: em
+Amarelo a telemetria sai a cada 2 h, em Vermelho a cada 4 h. O arquivo guarda
+tudo nos dois casos.
 
 A especificação do modelo (custos, prioridades, recarga, fases) está em
 [upgrade.md](upgrade.md). A seção 6 desse documento lista as decisões tomadas
